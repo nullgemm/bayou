@@ -14,17 +14,18 @@ bool bayou_init(
 	
 	void* buf_branches,
 	uint16_t len_branches,
-	uint16_t alloc_pointed_len_branches,
+	uint16_t alloc_step_len_branches,
 	uint16_t alloc_maximum_len_branches,
 
 	void* buf_elements,
 	uint16_t len_elements,
-	uint16_t alloc_pointed_len_elements,
+	uint16_t alloc_step_len_elements,
 	uint16_t alloc_maximum_len_elements,
+	uint16_t sizeof_element,
 
 	void* buf_holes,
 	uint16_t len_holes,
-	uint16_t alloc_pointed_len_holes,
+	uint16_t alloc_step_len_holes,
 	uint16_t alloc_maximum_len_holes);
 
 

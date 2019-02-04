@@ -6,8 +6,6 @@
 #include "../src/bayou.h"
 #include "../sub/testoasterror/src/testoasterror.h"
 
-union vub16 {uint16_t ub16; void* ptr;};
-
 // I know. This is for testing only, so STFU
 static void prev_element(struct bayou* bayou, uint16_t count)
 {
@@ -22,11 +20,7 @@ static void init_branch(
 	uint16_t len,
 	uint16_t start)
 {
-	union vub16 ptr;
-	ptr.ptr = 0; // important
-	ptr.ub16 += start;
-
-	void** el;
+	uint8_t* el;
 
 	for (uint8_t i = 0; i < len; ++i)
 	{
@@ -34,10 +28,8 @@ static void init_branch(
 
 		if (el != NULL)
 		{
-			*el = ptr.ptr;
+			*((uint16_t*)el) = i + start;
 		}
-
-		++(ptr.ub16);
 	}
 }
 
@@ -55,17 +47,18 @@ static void init_tree(
 
 		branches,
 		branches_len,
-		sizeof (struct bayou_branch),
+		10,
 		branches_len,
 
 		elements,
 		elements_len,
-		sizeof (void*),
+		20,
 		elements_len,
+		sizeof (uint16_t),
 
 		holes,
 		holes_len,
-		sizeof (struct bayou_hole),
+		30,
 		holes_len);
 
 	uint16_t start = 0;
@@ -102,14 +95,9 @@ static void test_elements_range(
 	uint16_t end,
 	uint16_t num_start)
 {
-	union vub16 ptr;
-	ptr.ptr = 0; // important
-	ptr.ub16 += num_start;
-
 	for (uint16_t i = 0; i < end - start + 1; ++i)
 	{
-		testoasterror(test, bayou->selected_branch->elements[i] == ptr.ptr);
-		++(ptr.ub16);
+		testoasterror(test, ((uint16_t*) bayou->selected_branch->elements)[i] == i + num_start);
 	}
 }
 
@@ -125,39 +113,41 @@ void test_init(struct testoasterror* test)
 
 		branches,
 		10,
-		sizeof (struct bayou_branch),
+		10,
 		10,
 
 		elements,
 		100,
-		sizeof (void*),
+		20,
 		100,
+		sizeof (uint16_t),
 
 		holes,
 		10,
-		sizeof (struct bayou_hole),
+		30,
 		10);
 
 	testoasterror(test, bayou.pool_elements.dyn == false);
 	testoasterror(test, bayou.pool_elements.buf == elements);
 	testoasterror(test, bayou.pool_elements.cur == 0);
 	testoasterror(test, bayou.pool_elements.len == 100);
-	testoasterror(test, bayou.pool_elements.pointed_len == (sizeof (void*)));
+	testoasterror(test, bayou.pool_elements.step_len == 20);
 	testoasterror(test, bayou.pool_elements.maximum_len == 100);
 
 	testoasterror(test, bayou.pool_branches.dyn == false);
 	testoasterror(test, bayou.pool_branches.buf == branches);
 	testoasterror(test, bayou.pool_branches.cur == 1);
 	testoasterror(test, bayou.pool_branches.len == 10);
-	testoasterror(test, bayou.pool_branches.pointed_len == (sizeof (struct bayou_branch)));
+	testoasterror(test, bayou.pool_branches.step_len == 10);
 	testoasterror(test, bayou.pool_branches.maximum_len == 10);
 
 	testoasterror(test, bayou.pool_holes.dyn == false);
 	testoasterror(test, bayou.pool_holes.buf == holes);
 	testoasterror(test, bayou.pool_holes.cur == 0);
 	testoasterror(test, bayou.pool_holes.len == 10);
-	testoasterror(test, bayou.pool_holes.pointed_len == (sizeof (struct bayou_hole)));
+	testoasterror(test, bayou.pool_holes.step_len == 30);
 	testoasterror(test, bayou.pool_holes.maximum_len == 10);
+	testoasterror(test, bayou.sizeof_element == sizeof(uint16_t));
 
 	testoasterror(test, bayou.root == bayou.pool_branches.buf);
 	testoasterror(test, bayou.selected_branch == bayou.pool_branches.buf);
@@ -182,17 +172,18 @@ void test_add(struct testoasterror* test)
 
 		branches,
 		10,
-		sizeof (struct bayou_branch),
+		10,
 		10,
 
 		elements,
 		100,
-		sizeof (void*),
+		20,
 		100,
+		sizeof (uint16_t),
 
 		holes,
 		10,
-		sizeof (struct bayou_hole),
+		30,
 		10);
 
 	init_branch(&bayou, 10, 0);
@@ -219,17 +210,18 @@ void test_split_simple(struct testoasterror* test)
 
 		branches,
 		10,
-		sizeof (struct bayou_branch),
+		10,
 		10,
 
 		elements,
 		100,
-		sizeof (void*),
+		20,
 		100,
+		sizeof (uint16_t),
 
 		holes,
 		10,
-		sizeof (struct bayou_hole),
+		30,
 		10);
 
 	init_branch(&bayou, 10, 0);
@@ -320,12 +312,8 @@ void test_frag(struct testoasterror* test)
 	bayou_element_set(&bayou, 2);
 	bayou_rm_element(&bayou);
 
-	union vub16 ptr;
-	ptr.ptr = 0; // important
-	ptr.ub16 += 8;
-
 	testoasterror(test, bayou_count_elements(&bayou) == 4);
-	testoasterror(test, bayou.selected_branch->elements[2] == ptr.ptr);
+	testoasterror(test, ((uint16_t*)bayou.selected_branch->elements)[2] == 8);
 	testoasterror(test, bayou_should_defrag(&bayou));
 }
 
