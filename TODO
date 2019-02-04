@@ -1,0 +1,3 @@
+add tests for size limit
+add auto-realloc
+add example for auto-defrag

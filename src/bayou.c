@@ -61,11 +61,15 @@ static bool link_branch(struct bayou* bayou, struct bayou_branch* new_branch)
 		struct bayou_branch* split_branch;
 		split_branch = ((struct bayou_branch*) bayou->pool_branches.buf);
 		split_branch += bayou->pool_branches.cur;
+
 		split_branch->parent = parent;
 		split_branch->siblings = new_branch;
 		split_branch->children = parent->children;
 		split_branch->children_len = parent->children_len;
-		split_branch->elements = parent->elements + (bayou->selected_element + 1) * bayou->sizeof_element;
+
+		split_branch->elements = parent->elements;
+		split_branch->elements += (bayou->selected_element + 1) * bayou->sizeof_element;
+
 		split_branch->elements_len = parent->elements_len - bayou->selected_element - 1;
 		++(bayou->pool_branches.cur);
 
@@ -111,8 +115,10 @@ static bool add_branch(struct bayou* bayou)
 	struct bayou_branch* new_branch;
 	new_branch = ((struct bayou_branch*) bayou->pool_branches.buf);
 	new_branch += bayou->pool_branches.cur;
+
 	new_branch->elements = ((uint8_t*) bayou->pool_elements.buf);
 	new_branch->elements += bayou->pool_elements.cur * bayou->sizeof_element;
+
 	new_branch->parent = NULL;
 	new_branch->siblings = NULL;
 	new_branch->children = NULL;
@@ -173,7 +179,9 @@ static bool rm_branch(
 	struct bayou_hole* new_hole;
 	new_hole = (struct bayou_hole*) bayou->pool_holes.buf;
 	new_hole += bayou->pool_holes.cur;
-	new_hole->id = (selected_branch->elements - ((uint8_t*) bayou->pool_elements.buf)) / bayou->sizeof_element;
+
+	uint16_t elements_offset = selected_branch->elements - ((uint8_t*) bayou->pool_elements.buf);
+	new_hole->id = elements_offset / bayou->sizeof_element;
 	new_hole->len = selected_branch->elements_len;
 	++(bayou->pool_holes.cur);
 
@@ -376,8 +384,12 @@ void bayou_defrag(struct bayou* bayou)
 
 	// defrag
 	struct bayou_branch* process = (struct bayou_branch*) bayou->pool_branches.buf;
-	uint8_t* elements = ((uint8_t*) bayou->pool_elements.buf) + hole->id * bayou->sizeof_element;
-	uint8_t* elements_next = elements + hole->len * bayou->sizeof_element;
+
+	uint8_t* elements = ((uint8_t*) bayou->pool_elements.buf);
+	elements += hole->id * bayou->sizeof_element;
+
+	uint8_t* elements_next = elements;
+	elements_next += hole->len * bayou->sizeof_element;
 
 	i = 0;
 	end = bayou->pool_branches.cur;
@@ -394,7 +406,7 @@ void bayou_defrag(struct bayou* bayou)
 
 	if (i != end)
 	{
-		memcpy(elements, process[i].elements, process[i].elements_len * bayou->sizeof_element); // safe
+		memcpy(elements, process[i].elements, process[i].elements_len * bayou->sizeof_element);
 		hole->id += process[i].elements_len;
 		process[i].elements = elements;
 	}
@@ -404,9 +416,7 @@ void bayou_defrag(struct bayou* bayou)
 	{
 		--(bayou->pool_holes.cur);
 		bayou->pool_elements.cur -= hole->len;
-		memcpy(hole,
-			hole + 1,
-			bayou->pool_holes.cur * (sizeof (struct bayou_hole)));
+		memcpy(hole, hole + 1, bayou->pool_holes.cur * (sizeof (struct bayou_hole)));
 	}
 }
 
@@ -421,7 +431,9 @@ void* bayou_add_element(struct bayou* bayou)
 	}
 
 	struct bayou_branch* selected_branch = bayou->selected_branch;
-	uint8_t* elements_cur = ((uint8_t*) pool_elements->buf) + pool_elements->cur * bayou->sizeof_element;
+
+	uint8_t* elements_cur = ((uint8_t*) pool_elements->buf);
+	elements_cur += pool_elements->cur * bayou->sizeof_element;
 
 	// add at the end of the buffer if there is no element in this branch yet
 	if (selected_branch->elements_len == 0)
@@ -430,11 +442,11 @@ void* bayou_add_element(struct bayou* bayou)
 	}
 
 	uint16_t elements_len = selected_branch->elements_len;
-	uint8_t* elements_next = selected_branch->elements + elements_len * bayou->sizeof_element;
+	uint8_t* elements_next = selected_branch->elements;
+	elements_next += elements_len * bayou->sizeof_element;
 
 	// jump over existing data when needed or when we want to split the branch
-	if ((elements_cur != elements_next)
-		|| (bayou->selected_element < (elements_len - 1)))
+	if ((elements_cur != elements_next) || (bayou->selected_element < (elements_len - 1)))
 	{
 		if (add_branch(bayou) == false)
 		{
@@ -464,33 +476,33 @@ void bayou_rm_branch(struct bayou* bayou)
 void bayou_rm_element(struct bayou* bayou)
 {
 	uint16_t selected_element = bayou->selected_element;
-	uint16_t selected_branch_elements_len = bayou->selected_branch->elements_len;
-	uint8_t* selected_branch_elements = bayou->selected_branch->elements;
+	uint16_t branch_elements_len = bayou->selected_branch->elements_len;
+	uint8_t* branch_elements = bayou->selected_branch->elements;
 
-	if (selected_branch_elements_len == 0)
+	if (branch_elements_len == 0)
 	{
 		return;
 	}
 
-	if ((selected_element + 1) < selected_branch_elements_len)
+	if ((selected_element + 1) < branch_elements_len)
 	{
-		// safe
-		memcpy(selected_branch_elements + selected_element * bayou->sizeof_element,
-			selected_branch_elements + (selected_element + 1) * bayou->sizeof_element,
-			(selected_branch_elements_len - selected_element - 1) * bayou->sizeof_element);
+		memcpy(branch_elements + selected_element * bayou->sizeof_element,
+			branch_elements + (selected_element + 1) * bayou->sizeof_element,
+			(branch_elements_len - selected_element - 1) * bayou->sizeof_element);
 	}
 
-	if ((selected_branch_elements + selected_branch_elements_len
-		< (((uint8_t*) bayou->pool_elements.buf) + bayou->pool_elements.cur * bayou->sizeof_element))
-		&& (bayou->pool_holes.cur < bayou->pool_holes.len))
+	uint8_t* pool_elements_cur_offset = (uint8_t*) bayou->pool_elements.buf;
+	pool_elements_cur_offset += bayou->pool_elements.cur * bayou->sizeof_element;
+
+	if (((branch_elements + branch_elements_len) < pool_elements_cur_offset)
+	&& (bayou->pool_holes.cur < bayou->pool_holes.len))
 	{
 		struct bayou_hole* new_hole;
 		new_hole = (struct bayou_hole*) bayou->pool_holes.buf;
 		new_hole += bayou->pool_holes.cur;
 
-		new_hole->id = (selected_branch_elements
-			- ((uint8_t*) bayou->pool_elements.buf)) / bayou->sizeof_element;
-		new_hole->id += selected_branch_elements_len - 1;
+		uint16_t elements_offset = branch_elements - ((uint8_t*) bayou->pool_elements.buf);
+		new_hole->id = (elements_offset / bayou->sizeof_element) + branch_elements_len - 1;
 		new_hole->len = 1;
 
 		++(bayou->pool_holes.cur);
