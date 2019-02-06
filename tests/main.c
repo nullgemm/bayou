@@ -4,7 +4,7 @@
 #include "tests.c"
 
 #define BAYOU_TEST_FUNCS 10
-#define BAYOU_TEST_SLOTS 100
+#define BAYOU_TEST_SLOTS 200
 
 int main()
 {

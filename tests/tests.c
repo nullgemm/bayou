@@ -6,7 +6,6 @@
 #include "../src/bayou.h"
 #include "../sub/testoasterror/src/testoasterror.h"
 
-// I know. This is for testing only, so STFU
 static void prev_element(struct bayou* bayou, uint16_t count)
 {
 	for (uint16_t i = 0; i < count; ++i)
@@ -340,6 +339,19 @@ void test_defrag(struct testoasterror* test)
 
 	testoasterror(test, !bayou_should_defrag(&bayou));
 
+	uint8_t k = 0;
+
+	for (uint8_t i = 0; i < 49; ++i)
+	{
+		testoasterror(test, ((uint16_t*) bayou.pool_elements.buf)[i] == k);
+		++k;
+
+		if (i == 4)
+		{
+			++k;
+		}
+	}
+
 	bayou_branch_root(&bayou);
 	testoasterror(test, bayou_count_elements(&bayou) == 5);
 	test_elements_range(test, &bayou, 0, 4, 0);
@@ -406,6 +418,19 @@ void test_defrag_multi(struct testoasterror* test)
 	}
 
 	testoasterror(test, !bayou_should_defrag(&bayou));
+
+	uint8_t k = 0;
+
+	for (uint8_t i = 0; i < 48; ++i)
+	{
+		testoasterror(test, ((uint16_t*) bayou.pool_elements.buf)[i] == k);
+		++k;
+
+		if (i == 37 || i == 4)
+		{
+			++k;
+		}
+	}
 
 	bayou_branch_root(&bayou);
 	testoasterror(test, bayou_count_elements(&bayou) == 5);
@@ -507,6 +532,19 @@ void test_defrag_branches(struct testoasterror* test)
 	}
 
 	testoasterror(test, !bayou_should_defrag(&bayou));
+
+	uint8_t k = 0;
+
+	for (uint8_t i = 0; i < 28; ++i)
+	{
+		testoasterror(test, ((uint16_t*) bayou.pool_elements.buf)[i] == k);
+		++k;
+
+		if (i == 24)
+		{
+			k += 5;
+		}
+	}
 
 	bayou_branch_root(&bayou);
 	testoasterror(test, bayou_count_elements(&bayou) == 5);
