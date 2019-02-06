@@ -4,12 +4,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// memory info for defragmentation
 struct bayou_hole
 {
 	uint16_t id;
 	uint16_t len;
 };
 
+// node info for browsing and manipulation
 struct bayou_branch
 {
 	struct bayou_branch* parent;
@@ -22,6 +24,8 @@ struct bayou_branch
 	uint16_t elements_len;
 };
 
+// used for holes, branches, elements
+// only fragments when deleting elements
 struct bayou_pool
 {
 	bool dyn; // wether we can realloc
