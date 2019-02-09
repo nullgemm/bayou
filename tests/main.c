@@ -3,7 +3,7 @@
 // source include
 #include "tests.c"
 
-#define BAYOU_TEST_FUNCS 11
+#define BAYOU_TEST_FUNCS 12
 #define BAYOU_TEST_SLOTS 200
 
 int main()
@@ -22,7 +22,8 @@ int main()
 		test_defrag_multi,
 		test_rm_branches,
 		test_defrag_branches,
-		test_limit_branches
+		test_limit_branches,
+		test_limit_elements
 	};
 
 	struct testoasterror test;

@@ -611,4 +611,45 @@ void test_limit_branches(struct testoasterror* test)
 	testoasterror(test, bayou.selected_branch->children == NULL);
 }
 
+void test_limit_elements(struct testoasterror* test)
+{
+	struct bayou bayou;
+	struct bayou_hole holes[10];
+	struct bayou_branch branches[8];
+	void* elements[40];
+
+	init_tree(&bayou, holes, branches, elements, 10, 8, 40);
+
+	bayou_branch_root(&bayou);
+	testoasterror(test, bayou_count_elements(&bayou) == 5);
+	testoasterror(test, bayou_count_branches(&bayou) == 6);
+	test_elements_range(test, &bayou, 0, 4, 0);
+
+	bayou_branch_child(&bayou);
+	bayou_branch_sibling(&bayou);
+	testoasterror(test, bayou_count_elements(&bayou) == 10);
+	test_elements_range(test, &bayou, 10, 19, 10);
+
+	bayou_branch_parent(&bayou);
+	bayou_branch_child(&bayou);
+	testoasterror(test, bayou_count_elements(&bayou) == 5);
+	test_elements_range(test, &bayou, 5, 9, 5);
+
+	bayou_branch_child(&bayou);
+	testoasterror(test, bayou_count_elements(&bayou) == 5);
+	test_elements_range(test, &bayou, 20, 24, 20);
+
+	bayou_branch_child(&bayou);
+	bayou_branch_sibling(&bayou);
+	testoasterror(test, bayou_count_elements(&bayou) == 10);
+	test_elements_range(test, &bayou, 30, 39, 30);
+
+	bayou_branch_parent(&bayou);
+	bayou_branch_child(&bayou);
+	testoasterror(test, bayou_count_elements(&bayou) == 5);
+	test_elements_range(test, &bayou, 25, 29, 25);
+
+	testoasterror(test, bayou.selected_branch->children == NULL);
+}
+
 #endif
