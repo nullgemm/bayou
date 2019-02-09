@@ -51,10 +51,9 @@ static bool link_branch(struct bayou* bayou, struct bayou_branch* new_branch)
 
 	if (bayou->selected_element < (bayou->selected_branch->elements_len - 1))
 	{
-		// no more space
 		if (bayou->pool_branches.cur == bayou->pool_branches.len)
 		{
-			return false;
+			return false; // TESTED
 		}
 
 		// split the parent
@@ -173,7 +172,7 @@ static bool rm_branch(
 	// register a hole
 	if (bayou->pool_holes.cur == bayou->pool_holes.len)
 	{
-		run = false; // FIXME remove, defrag or realloc
+		run = false; // TEST
 	}
 
 	struct bayou_hole* new_hole;
@@ -426,8 +425,7 @@ void* bayou_add_element(struct bayou* bayou)
 
 	if (pool_elements->cur == pool_elements->len)
 	{
-		// no more space
-		return NULL;
+		return NULL; // TESTED
 	}
 
 	struct bayou_branch* selected_branch = bayou->selected_branch;
@@ -450,7 +448,7 @@ void* bayou_add_element(struct bayou* bayou)
 	{
 		if (add_branch(bayou) == false)
 		{
-			return NULL;
+			return NULL; // TESTED
 		}
 
 		selected_branch = bayou->selected_branch;
