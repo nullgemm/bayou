@@ -52,7 +52,7 @@ static bool link_branch(struct bayou* bayou, struct bayou_branch* new_branch)
 	if (bayou->selected_element < (bayou->selected_branch->elements_len - 1))
 	{
 		// no more space
-		if ((bayou->pool_branches.cur + 1) == bayou->pool_branches.len)
+		if (bayou->pool_branches.cur == bayou->pool_branches.len)
 		{
 			return false;
 		}
