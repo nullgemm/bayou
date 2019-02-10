@@ -69,12 +69,12 @@ clean:
 
 github:
 	@echo "sourcing submodules from https://github.com"
-	@mv .github .gitmodules
+	@cp .github .gitmodules
 	@git submodule sync
 	@git submodule update --init --recursive --remote
 
 gitea:
 	@echo "sourcing submodules from https://git.cylgom.net"
-	@mv .gitea .gitmodules
+	@cp .gitea .gitmodules
 	@git submodule sync
 	@git submodule update --init --recursive --remote
